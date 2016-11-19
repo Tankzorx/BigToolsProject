@@ -3,10 +3,11 @@ startTick = time.time()
 import json
 import csv
 import re
-import codecs
+
 from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.linear_model import PassiveAggressiveClassifier
 import numpy as np
+from readChunk import readChunk
 # from imp import reload
 # import sys
 # reload(sys)
@@ -17,32 +18,6 @@ def log(msg):
 	if DEBUG_ON:
 		print(msg)
 
-
-# If the file is fully read, next() calls will simply return the empty string.
-def readChunk(filename,lines_to_yield=1):
-	jsonObjects = []
-	lines_read = 0
-	with codecs.open(filename,encoding="utf-8") as fileHandle:
-		while True:
-			line = fileHandle.readline()
-			lines_read += 1
-			if line:
-				#print line
-				jsonObjects.append(line)
-				if lines_read >= lines_to_yield:
-					# We're here because we hit our line cap.
-					yield jsonObjects
-					jsonObjects = []
-					lines_read = 0
-			else:
-				# We're here because we hit EOF.
-				if len(jsonObjects) == 0:
-					return
-				else:
-					yield jsonObjects
-					jsonObjects = []
-					lines_read = 0
-
 def rangifyScore(score):
 	if score > 2000:
 		return 20
@@ -52,15 +27,18 @@ def rangifyScore(score):
 
 def main():
 	# Vectorizer with 2^18 buckets.
-	chunkSize = 100000
-	n_buckets = 2 ** 17
+	chunkSize = 300000
+	n_buckets = 2 ** 19
 
 	vectorizer = HashingVectorizer(decode_error='ignore', n_features=n_buckets,
                                non_negative=True)
 	classifier = PassiveAggressiveClassifier()
 
 	#JSONGenerator = readChunk("data/dataSampleFile",chunkSize)
-	JSONGenerator = readChunk("data/RC_2009-12",chunkSize)
+	JSONGenerator = readChunk("data/RC_2007-10",chunkSize)
+	#JSONGenerator = readChunk("data/RC_2008-01",chunkSize)
+	#JSONGenerator = readChunk("data/RC_2009-12",chunkSize)
+	#JSONGenerator = readChunk("data/RC_2012-01",chunkSize)
 
 	JSONArrayTestSet = next(JSONGenerator)
 	X_test_text = []

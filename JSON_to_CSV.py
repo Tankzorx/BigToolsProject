@@ -1,35 +1,9 @@
 import json
 import csv
 import re
-import sys
-reload(sys)
-sys.setdefaultencoding('utf-8')
+import codecs
+from readChunk import readChunk
 
-# If the file is fully read, next() calls will simply return the empty string.
-def readJSONChunk(filename,lines_to_yield=1):
-	jsonObjects = []
-	lines_read = 0
-	with open(filename) as fileHandle:
-		while True:
-			line = fileHandle.readline()
-			lines_read += 1
-			if line:
-				#print line
-				jsonObjects.append(json.loads(line))
-				if lines_read >= lines_to_yield:
-					# We're here because we hit our line cap.
-					yield jsonObjects
-					jsonObjects = []
-					lines_read = 0
-			else:
-				# We're here because we hit EOF.
-				if len(jsonObjects) == 0:
-					return
-				else:
-					yield jsonObjects
-					jsonObjects = []
-					lines_read = 0
-	
 # Returns 3 different CSV snippets. 1 for user, 1 for comment and 1 for subreddit.
 # users:
 # author
@@ -46,9 +20,10 @@ def redditJSON_to_CSV(json):
 	subreddit_csv = ""
 	# Try-catch in case data is illformed
 	#try:
-	user_csv += unicode(json["author"]) + "\n"
-	comment_csv += unicode(json["id"]) + "," + unicode(json["author"]) + "," + unicode(json["subreddit_id"]) \
-	+ "," + unicode(json["created_utc"]) + "," + unicode(json["score"]) + "," + unicode(json["downs"]) + "," + json["body"].replace("\n","\\n").replace("\r","\\r") + "\n"
+	user_csv += json["author"] + "\n"
+	comment_csv += json["id"] + "," + json["author"] + "," + json["subreddit_id"] \
+	+ "," + json["created_utc"] + "," + str(json["score"]) + "," + str(json["downs"]) + ",\"" \
+	+ json["body"].replace("\n","\\n").replace("\r","\\r") + "\"\n"
 
 	subreddit_csv += str(json["subreddit_id"]) + "\n"
 	return user_csv,comment_csv,subreddit_csv
@@ -56,59 +31,43 @@ def redditJSON_to_CSV(json):
 	#	raise e
 		
 def writeToCSV(filename,string):
-	with open(filename,"a") as fileHandle:
-		fileHandle.write(unicode(string))
+	with codecs.open(filename,"a",encoding="utf-8") as fileHandle:
+		fileHandle.write(string)
+
+def writeCSVFile(filename,outputCommentFile="comment.csv",outputUserFile="user.csv",outputSubredditFile="subreddit.csv",chunkSize=100000):
+	chunkGenerator = readChunk(filename,chunkSize)
+	# Empty the files.
+	codecs.open(outputUserFile, 'w').close()
+	codecs.open(outputCommentFile, 'w').close()
+	codecs.open(outputSubredditFile, 'w').close()
+
+	# Insert the headers.
+	writeToCSV(outputUserFile,"userID\n")
+	writeToCSV(outputCommentFile,"commentID, userID, subredditID, created_utc, score, downs, body\n")
+	writeToCSV(outputSubredditFile,"subredditID\n")
+	# Iterate over all chunks in file:
+	for i, chunk in enumerate(chunkGenerator):
+		chunkUser = []
+		chunkComment = [] 
+		chunkSubreddit = []
+		for jsonObj in chunk:
+			user,comment,subreddit = redditJSON_to_CSV(json.loads(jsonObj))
+			chunkUser.append(user)
+			chunkComment.append(comment)
+			chunkSubreddit.append(subreddit)
+		# Done preparing chunk. Now append this chunk to the output files.
+		writeToCSV(outputUserFile,"".join(chunkUser)[:-1])
+		writeToCSV(outputCommentFile,"".join(chunkComment)[:-1])
+		writeToCSV(outputSubredditFile,"".join(chunkSubreddit)[:-1])
+
+	return True
+
 
 
 def main():
-	k = readJSONChunk("data/RC_2007-10",1000)
-	#k = readJSONChunk("data/dataSampleFile",100000)
-	userCSVPath = "CSV_data/user.csv"
-	commentCSVPath = "CSV_data/comment.csv"
-	subredditCSVPath = "CSV_data/subreddit.csv"
-
-	# This empties the CSV files!
-	open(userCSVPath, 'w').close()
-	open(commentCSVPath, 'w').close()
-	open(subredditCSVPath, 'w').close()
-
-	# Insert the headers.
-	writeToCSV(userCSVPath,"userID\n")
-	writeToCSV(commentCSVPath,"commentID, userID, subredditID, created_utc, score, downs, body\n")
-	writeToCSV(subredditCSVPath,"subredditID\n")
-
-	while True:
-		#print "I'm alive.."
-		nextChunk = []
-		try:
-			#print "Start read"
-			nextChunk = k.next()
-			#print "End read"
-		except Exception as e:
-			# print e
-			pass
-
-
-		if len(nextChunk) == 0:
-			break
-
-		user_csv = []
-		comment_csv = []
-		subreddit_csv = []
-		for JSONObject in nextChunk:
-			user,comment,subreddit = redditJSON_to_CSV(JSONObject)
-			user_csv.append(user)
-			comment_csv.append(comment)
-			subreddit_csv.append(subreddit)
-
-		writeToCSV(userCSVPath,"".join(user_csv)[:-1])
-		writeToCSV(commentCSVPath,"".join(comment_csv)[:-1])
-		writeToCSV(subredditCSVPath,"".join(subreddit_csv)[:-1])
-
-
-	
-
-	
+	# Test on small file. Uncomment and run if you're sure the files and folders exists.
+	# writeCSVFile("data/dataSampleFile",outputCommentFile="CSV_data/comment.csv",outputUserFile="CSV_data/user.csv",outputSubredditFile="CSV_data/subreddit.csv")
+	pass
 
 if __name__ == '__main__':
 	main()
