@@ -23,7 +23,7 @@ def redditJSON_to_CSV(json):
 	user_csv += json["author"] + "\n"
 	comment_csv += json["id"] + "," + json["author"] + "," + json["subreddit_id"] \
 	+ "," + json["created_utc"] + "," + str(json["score"]) + "," + str(json["downs"]) + ",\"" \
-	+ json["body"].replace("\n","\\n").replace("\r","\\r") + "\"\n"
+	+ json["body"] + "\"\n"
 
 	subreddit_csv += str(json["subreddit_id"]) + "\n"
 	return user_csv,comment_csv,subreddit_csv
@@ -43,7 +43,7 @@ def writeCSVFile(filename,outputCommentFile="comment.csv",outputUserFile="user.c
 
 	# Insert the headers.
 	writeToCSV(outputUserFile,"userID\n")
-	writeToCSV(outputCommentFile,"commentID, userID, subredditID, created_utc, score, downs, body\n")
+	writeToCSV(outputCommentFile,"commentID,userID,subredditID,created_utc,score,downs,body\n")
 	writeToCSV(outputSubredditFile,"subredditID\n")
 	# Iterate over all chunks in file:
 	for i, chunk in enumerate(chunkGenerator):
@@ -66,7 +66,9 @@ def writeCSVFile(filename,outputCommentFile="comment.csv",outputUserFile="user.c
 
 def main():
 	# Test on small file. Uncomment and run if you're sure the files and folders exists.
-	# writeCSVFile("data/dataSampleFile",outputCommentFile="CSV_data/comment.csv",outputUserFile="CSV_data/user.csv",outputSubredditFile="CSV_data/subreddit.csv")
+	#writeCSVFile("data/RC_2008-01",outputCommentFile="CSV_data/Comments.csv",outputUserFile="CSV_data/Users.csv",outputSubredditFile="CSV_data/Subreddits.csv")
+	#writeCSVFile("data/RC_2008-01",outputCommentFile="../bigdata/import/Comments.csv",outputUserFile="../bigdata/import/Users.csv",outputSubredditFile="../bigdata/import/Subreddits.csv")
+	writeCSVFile("testdata/double_quote",outputCommentFile="CSV_data/Comments.csv",outputUserFile="CSV_data/Users.csv",outputSubredditFile="CSV_data/Subreddits.csv")
 	pass
 
 if __name__ == '__main__':

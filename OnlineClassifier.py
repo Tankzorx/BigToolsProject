@@ -13,7 +13,7 @@ from readChunk import readChunk
 # reload(sys)
 # sys.setdefaultencoding('utf-8')
 
-DEBUG_ON = False
+DEBUG_ON = True
 def log(msg):
 	if DEBUG_ON:
 		print(msg)
@@ -35,8 +35,9 @@ def main():
 	classifier = PassiveAggressiveClassifier()
 
 	#JSONGenerator = readChunk("data/dataSampleFile",chunkSize)
-	JSONGenerator = readChunk("data/RC_2007-10",chunkSize)
+	#JSONGenerator = readChunk("data/RC_2007-10",chunkSize)
 	#JSONGenerator = readChunk("data/RC_2008-01",chunkSize)
+	JSONGenerator = readChunk("data/RC_2008-12",chunkSize)
 	#JSONGenerator = readChunk("data/RC_2009-12",chunkSize)
 	#JSONGenerator = readChunk("data/RC_2012-01",chunkSize)
 
@@ -84,7 +85,7 @@ def main():
 
 		generatorTimeTick = time.time()
 
-
+	log("Total Time: " + str(time.time() - startTick))
 	print(classifier.score(X_test,Y_test))
 
 
